@@ -10,7 +10,7 @@ def load_sentences_brown(nb_sentences=None):
     from nltk.corpus import brown
     import gensim
 
-    print 'building vocab ...'
+    print('building vocab ...')
 
     if nb_sentences is None:
         sents = brown.sents()
@@ -20,14 +20,14 @@ def load_sentences_brown(nb_sentences=None):
     # I use gensim model only for building vocab
     model = gensim.models.Word2Vec()
     model.build_vocab(sents)
-    vocab = model.vocab
+    vocab = model.wv.vocab
 
     # ids: list of (list of word-id)
     ids = [[vocab[w].index for w in sent
             if w in vocab and vocab[w].sample_int > model.random.rand() * 2**32]
            for sent in sents]
 
-    return ids, model.index2word
+    return ids, model.wv.index2word
 
 
 def skip_grams(sentences, window, vocab_size, nb_negative_samples=5.):
@@ -41,7 +41,7 @@ def skip_grams(sentences, window, vocab_size, nb_negative_samples=5.):
     import keras.preprocessing.sequence as seq
     import numpy as np
 
-    print 'building skip-grams ...'
+    print('building skip-grams ...')
 
     def sg(sentence):
         return seq.skipgrams(sentence, vocab_size,
@@ -86,6 +86,6 @@ def most_similar(positive=[], negative=[]):
     :return:
     """
     from gensim import models
-    vec = models.word2vec.Word2Vec.load_word2vec_format(filename, binary=False)
+    vec = models.KeyedVectors.load_word2vec_format(filename, binary=False)
     for v in vec.most_similar_cosmul(positive=positive, negative=negative, topn=20):
         print(v)

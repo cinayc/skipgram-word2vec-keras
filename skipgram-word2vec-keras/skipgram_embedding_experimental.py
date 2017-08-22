@@ -47,7 +47,7 @@ def batch_generator(cpl, lbl):
 # load data
 # - sentences: list of (list of id)
 # - index2word: list of string
-sentences, index2word = utils.load_sentences_brown()
+sentences, index2word = utils.load_sentences_brown(100)
 
 # params
 nb_epoch = 3
@@ -60,8 +60,8 @@ vocab_size = len(index2word)
 
 # create input
 couples, labels = utils.skip_grams(sentences, window_size, vocab_size)
-print 'shape of couples: ', couples.shape
-print 'shape of labels: ', labels.shape
+print('shape of couples: ', couples.shape)
+print('shape of labels: ', labels.shape)
 
 # metrics
 nb_batch = len(labels) // batch_size
@@ -78,24 +78,29 @@ embedded_ctx = Dense(input_dim=vocab_size,
                      output_dim=vec_dim)(input_ctx)
 
 merged = merge(inputs=[embedded_pvt, embedded_ctx],
-               mode=lambda a: (a[0]*a[1]).sum(-1).reshape((batch_size, 1)),
+               # mode=lambda a: (a[0]*a[1]).sum(-1).reshape((batch_size, 1)),
+               mode='dot',
+               dot_axes=1,
+               # mode='sum',
                output_shape=(batch_size, 1))
+
+print('shape of merged: ', merged.shape)
 
 predictions = Activation('sigmoid')(merged)
 
 
 # build and train the model
-model = Model(input=[input_pvt, input_ctx], output=predictions)
+model = Model(inputs=[input_pvt, input_ctx], outputs=predictions)
 model.compile(optimizer='rmsprop', loss='mse', metrics=['accuracy'])
 model.fit_generator(generator=batch_generator(couples, labels),
-                    samples_per_epoch=samples_per_epoch,
-                    nb_epoch=nb_epoch, verbose=1)
+                    steps_per_epoch=samples_per_epoch,
+                    epochs=nb_epoch, verbose=1)
 
 # save weights
 utils.save_weights(model, index2word, vec_dim)
 
 # eval using gensim
-print 'the....'
+print('the....')
 utils.most_similar(positive=['the'])
-print 'she - he + him....'
+print('she - he + him....')
 utils.most_similar(positive=['she', 'him'], negative=['he'])
